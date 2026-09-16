@@ -1,0 +1,26 @@
+{
+  "name": "student-record-management",
+  "version": "1.0.0",
+  "description": "Student Record Management Web Application built with AngularJS, Node.js, and MongoDB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "student-record-management",
+    "angularjs",
+    "nodejs",
+    "mongodb",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongodb-memory-server": "^10.1.4",
+    "mongoose": "^8.9.5"
+  }
+}
