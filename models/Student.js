@@ -8,7 +8,7 @@ const studentSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       uppercase: true,
-      match: [/^[A-Za-z0-9\-_]+$/, 'Student ID can only contain letters, numbers, hyphens, and underscores']
+      match: [/^[A-Za-z0-9\s\-_/]+$/, 'Student ID can contain letters, numbers, spaces, hyphens, and underscores']
     },
     name: {
       type: String,

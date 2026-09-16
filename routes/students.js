@@ -213,13 +213,21 @@ router.post('/', async (req, res) => {
       }
     }
 
+    // Sanitize mobile to 10 digits
+    let cleanMobile = mobile ? String(mobile).replace(/\D/g, '') : '';
+    if (cleanMobile.length > 10 && cleanMobile.startsWith('91')) {
+      cleanMobile = cleanMobile.slice(2);
+    } else if (cleanMobile.length > 10) {
+      cleanMobile = cleanMobile.slice(-10);
+    }
+
     const newStudent = new Student({
       studentId: studentId ? studentId.trim().toUpperCase() : undefined,
       name: name ? name.trim() : undefined,
       email: email ? email.trim().toLowerCase() : undefined,
       course: course ? course.trim() : undefined,
       semester: semester ? Number(semester) : undefined,
-      mobile: mobile ? mobile.trim() : undefined
+      mobile: cleanMobile || (mobile ? mobile.trim() : undefined)
     });
 
     const savedStudent = await newStudent.save();
@@ -301,7 +309,15 @@ router.put('/:id', async (req, res) => {
     if (name) student.name = name.trim();
     if (course) student.course = course.trim();
     if (semester !== undefined) student.semester = Number(semester);
-    if (mobile) student.mobile = mobile.trim();
+    if (mobile) {
+      let cleanMobile = String(mobile).replace(/\D/g, '');
+      if (cleanMobile.length > 10 && cleanMobile.startsWith('91')) {
+        cleanMobile = cleanMobile.slice(2);
+      } else if (cleanMobile.length > 10) {
+        cleanMobile = cleanMobile.slice(-10);
+      }
+      student.mobile = cleanMobile || mobile.trim();
+    }
 
     const updatedStudent = await student.save();
 
