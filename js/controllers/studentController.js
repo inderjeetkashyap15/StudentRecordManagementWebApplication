@@ -2,7 +2,7 @@
  * EduNexus - Student Record Management Application
  * AngularJS Student Controller
  */
-app.controller('StudentController', ['$scope', '$http', '$timeout', 'ToastService', function($scope, $http, $timeout, ToastService) {
+app.controller('StudentController', ['$scope', '$http', '$timeout', 'ToastService', 'StudentDataService', function($scope, $http, $timeout, ToastService, StudentDataService) {
   // Data lists & loading states
   $scope.students = [];
   $scope.stats = {
@@ -52,33 +52,24 @@ app.controller('StudentController', ['$scope', '$http', '$timeout', 'ToastServic
   $scope.toasts = ToastService.toasts;
   $scope.removeToast = ToastService.remove;
 
-  // Fetch all students from backend
+  // Fetch all students
   $scope.fetchStudents = function() {
     $scope.isLoading = true;
-    let url = '/api/students?';
-    const params = [];
+    const params = {
+      search: $scope.searchQuery,
+      course: $scope.selectedCourse,
+      semester: $scope.selectedSemester
+    };
 
-    if ($scope.searchQuery && $scope.searchQuery.trim() !== '') {
-      params.push('search=' + encodeURIComponent($scope.searchQuery.trim()));
-    }
-    if ($scope.selectedCourse && $scope.selectedCourse !== 'All') {
-      params.push('course=' + encodeURIComponent($scope.selectedCourse));
-    }
-    if ($scope.selectedSemester && $scope.selectedSemester !== 'All') {
-      params.push('semester=' + encodeURIComponent($scope.selectedSemester));
-    }
-
-    url += params.join('&');
-
-    $http.get(url)
+    StudentDataService.getAll(params)
       .then(function(response) {
-        if (response.data.success) {
+        if (response.data && response.data.success) {
           $scope.students = response.data.data;
         }
       })
       .catch(function(error) {
         console.error('Error fetching students:', error);
-        ToastService.error('Failed to load student records from server.');
+        ToastService.error('Failed to load student records.');
       })
       .finally(function() {
         $scope.isLoading = false;
@@ -87,9 +78,9 @@ app.controller('StudentController', ['$scope', '$http', '$timeout', 'ToastServic
 
   // Fetch dashboard statistics
   $scope.fetchStats = function() {
-    $http.get('/api/students/stats')
+    StudentDataService.getStats()
       .then(function(response) {
-        if (response.data.success) {
+        if (response.data && response.data.success) {
           $scope.stats = response.data.data;
         }
       })
@@ -240,32 +231,32 @@ app.controller('StudentController', ['$scope', '$http', '$timeout', 'ToastServic
     if ($scope.modalState.isEdit) {
       // Update existing student
       const idToUpdate = $scope.formData._id || $scope.formData.studentId;
-      $http.put('/api/students/' + idToUpdate, $scope.formData)
+      StudentDataService.update(idToUpdate, $scope.formData)
         .then(function(res) {
-          if (res.data.success) {
-            ToastService.success(`Student '${res.data.data.name}' updated successfully!`);
+          if (res.data && res.data.success) {
+            ToastService.success(`Student '${$scope.formData.name}' updated successfully!`);
             $scope.closeFormModal();
             $scope.fetchStudents();
             $scope.fetchStats();
           }
         })
         .catch(function(err) {
-          const msg = (err.data && err.data.message) ? err.data.message : 'Error updating student';
+          const msg = (err && err.data && err.data.message) ? err.data.message : 'Error updating student';
           ToastService.error(msg);
         });
     } else {
       // Create new student
-      $http.post('/api/students', $scope.formData)
+      StudentDataService.create($scope.formData)
         .then(function(res) {
-          if (res.data.success) {
-            ToastService.success(`Student '${res.data.data.name}' added successfully!`);
+          if (res.data && res.data.success) {
+            ToastService.success(`Student '${$scope.formData.name}' added successfully!`);
             $scope.closeFormModal();
             $scope.fetchStudents();
             $scope.fetchStats();
           }
         })
         .catch(function(err) {
-          const msg = (err.data && err.data.message) ? err.data.message : 'Error adding student';
+          const msg = (err && err.data && err.data.message) ? err.data.message : 'Error adding student';
           ToastService.error(msg);
         });
     }
@@ -298,9 +289,9 @@ app.controller('StudentController', ['$scope', '$http', '$timeout', 'ToastServic
     if (!$scope.studentToDelete) return;
     const targetId = $scope.studentToDelete._id || $scope.studentToDelete.studentId;
 
-    $http.delete('/api/students/' + targetId)
+    StudentDataService.delete(targetId, $scope.studentToDelete.studentId)
       .then(function(res) {
-        if (res.data.success) {
+        if (res.data && res.data.success) {
           ToastService.success(res.data.message);
           $scope.closeDeleteModal();
           $scope.fetchStudents();
@@ -308,23 +299,23 @@ app.controller('StudentController', ['$scope', '$http', '$timeout', 'ToastServic
         }
       })
       .catch(function(err) {
-        const msg = (err.data && err.data.message) ? err.data.message : 'Failed to delete student';
+        const msg = (err && err.data && err.data.message) ? err.data.message : 'Failed to delete student';
         ToastService.error(msg);
       });
   };
 
   // Seed Demo Records
   $scope.seedDemoData = function() {
-    $http.post('/api/students/seed')
+    StudentDataService.seed()
       .then(function(res) {
-        if (res.data.success) {
+        if (res.data && res.data.success) {
           ToastService.success(res.data.message);
           $scope.fetchStudents();
           $scope.fetchStats();
         }
       })
-      .catch(function(err) {
-        ToastService.error('Failed to seed demo data.');
+      .catch(function() {
+        ToastService.error('Failed to load sample records.');
       });
   };
 
