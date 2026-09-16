@@ -4,6 +4,9 @@ A full-stack Student Record Management Web Application built with the **MEAN**-s
 
 ![Tech Stack](https://img.shields.io/badge/Stack-Node.js%20%7C%20Express%20%7C%20AngularJS%20%7C%20MongoDB-indigo)
 ![License](https://img.shields.io/badge/License-MIT-blue)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen)](https://inderjeetkashyap15.github.io/StudentRecordManagementWebApplication/)
+
+🌐 **Live GitHub Pages URL**: **[https://inderjeetkashyap15.github.io/StudentRecordManagementWebApplication/](https://inderjeetkashyap15.github.io/StudentRecordManagementWebApplication/)**
 
 ---
 
