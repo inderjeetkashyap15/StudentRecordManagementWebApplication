@@ -147,6 +147,9 @@ app.controller('StudentController', ['$scope', '$http', '$timeout', 'ToastServic
   $scope.openEditModal = function(student) {
     $scope.modalState.isEdit = true;
     $scope.formData = angular.copy(student);
+    if ($scope.formData.semester) {
+      $scope.formData.semester = Number($scope.formData.semester);
+    }
     if ($scope.studentForm) {
       $scope.studentForm.$setPristine();
       $scope.studentForm.$setUntouched();
@@ -162,15 +165,55 @@ app.controller('StudentController', ['$scope', '$http', '$timeout', 'ToastServic
 
   // Submit Add or Edit Form
   $scope.saveStudent = function() {
-    if ($scope.studentForm.$invalid) {
-      angular.forEach($scope.studentForm.$error, function(field) {
-        angular.forEach(field, function(errorField) {
-          errorField.$setTouched();
-        });
-      });
-      ToastService.error('Please check required fields and fix validation errors.');
+    // Clean and trim inputs
+    if ($scope.formData.name) $scope.formData.name = $scope.formData.name.trim();
+    if ($scope.formData.studentId) $scope.formData.studentId = $scope.formData.studentId.trim().toUpperCase();
+    if ($scope.formData.email) $scope.formData.email = $scope.formData.email.trim().toLowerCase();
+
+    // Field-by-field validation with helpful feedback
+    if (!$scope.formData.studentId) {
+      ToastService.error('Please enter a Student ID.');
       return;
     }
+    if (!$scope.formData.name) {
+      ToastService.error('Please enter the Student Name.');
+      return;
+    }
+    if (!$scope.formData.email) {
+      ToastService.error('Please enter an Email address.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test($scope.formData.email)) {
+      ToastService.error('Please enter a valid email address.');
+      return;
+    }
+    if (!$scope.formData.course) {
+      ToastService.error('Please select a Course.');
+      return;
+    }
+    if (!$scope.formData.semester) {
+      ToastService.error('Please select a Semester.');
+      return;
+    }
+    if (!$scope.formData.mobile) {
+      ToastService.error('Please enter a Mobile number.');
+      return;
+    }
+
+    // Auto-clean mobile digits (supports +91, spaces, dashes)
+    let cleanedMobile = String($scope.formData.mobile).replace(/\D/g, '');
+    if (cleanedMobile.length > 10 && cleanedMobile.startsWith('91')) {
+      cleanedMobile = cleanedMobile.slice(2);
+    } else if (cleanedMobile.length > 10) {
+      cleanedMobile = cleanedMobile.slice(-10);
+    }
+
+    if (cleanedMobile.length !== 10) {
+      ToastService.error('Mobile number must be a 10-digit number (e.g. 9876543210).');
+      return;
+    }
+    $scope.formData.mobile = cleanedMobile;
 
     if ($scope.modalState.isEdit) {
       // Update existing student

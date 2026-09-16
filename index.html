@@ -486,8 +486,8 @@
                 name="course" 
                 class="form-control" 
                 ng-model="formData.course" 
+                ng-options="c for c in coursesList"
                 required>
-                <option ng-repeat="c in coursesList" value="{{c}}">{{c}}</option>
               </select>
             </div>
 
@@ -501,8 +501,8 @@
                 name="semester" 
                 class="form-control" 
                 ng-model="formData.semester" 
+                ng-options="s as ('Semester ' + s) for s in semestersList"
                 required>
-                <option ng-repeat="s in semestersList" value="{{s}}">Semester {{s}}</option>
               </select>
             </div>
 
@@ -512,20 +512,15 @@
                 Mobile Number (10 Digits) <span class="required-star">*</span>
               </label>
               <input 
-                type="tel" 
+                type="text" 
                 id="input-student-mobile" 
                 name="mobile" 
                 class="form-control" 
-                ng-class="{'is-invalid': studentForm.mobile.$touched && studentForm.mobile.$invalid}"
                 placeholder="e.g. 9876543210" 
                 ng-model="formData.mobile" 
-                ng-pattern="/^[0-9]{10}$/"
                 required>
-              <span class="form-error-msg" ng-show="studentForm.mobile.$touched && studentForm.mobile.$error.required">
+              <span class="form-error-msg" ng-show="studentForm.mobile.$touched && !formData.mobile">
                 Mobile number is required.
-              </span>
-              <span class="form-error-msg" ng-show="studentForm.mobile.$touched && studentForm.mobile.$error.pattern">
-                Please enter a valid 10-digit mobile number.
               </span>
             </div>
           </div>
@@ -533,7 +528,7 @@
 
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" ng-click="closeFormModal()">Cancel</button>
-          <button type="submit" id="btn-submit-student" class="btn btn-primary" ng-disabled="studentForm.$invalid">
+          <button type="submit" id="btn-submit-student" class="btn btn-primary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
               <polyline points="17 21 17 13 7 13 7 21"></polyline>
