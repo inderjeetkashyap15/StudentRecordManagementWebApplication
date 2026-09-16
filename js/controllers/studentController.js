@@ -98,21 +98,43 @@ app.controller('StudentController', ['$scope', '$http', '$timeout', 'ToastServic
       });
   };
 
-  // Live search debounced handler
-  let searchTimeout = null;
-  $scope.onSearchChange = function() {
-    if (searchTimeout) {
-      $timeout.cancel(searchTimeout);
+  // Instant multi-field client search & filter
+  $scope.filterStudent = function(student) {
+    if (!student) return false;
+
+    // Filter by selected course dropdown
+    if ($scope.selectedCourse && $scope.selectedCourse !== 'All') {
+      if (student.course !== $scope.selectedCourse) return false;
     }
-    searchTimeout = $timeout(function() {
-      $scope.fetchStudents();
-    }, 280);
+
+    // Filter by selected semester dropdown
+    if ($scope.selectedSemester && $scope.selectedSemester !== 'All') {
+      if (Number(student.semester) !== Number($scope.selectedSemester)) return false;
+    }
+
+    // Filter by search query
+    if (!$scope.searchQuery || $scope.searchQuery.trim() === '') {
+      return true;
+    }
+
+    const q = $scope.searchQuery.trim().toLowerCase();
+    const id = (student.studentId || '').toLowerCase();
+    const name = (student.name || '').toLowerCase();
+    const email = (student.email || '').toLowerCase();
+    const course = (student.course || '').toLowerCase();
+    const mobile = (student.mobile || '');
+
+    return id.includes(q) || name.includes(q) || email.includes(q) || course.includes(q) || mobile.includes(q);
+  };
+
+  // Live search handler
+  $scope.onSearchChange = function() {
+    // Client-side filtering applies instantly via filterStudent
   };
 
   // Clear live search
   $scope.clearSearch = function() {
     $scope.searchQuery = '';
-    $scope.fetchStudents();
   };
 
   // Reset all filters and list all students
