@@ -12,6 +12,12 @@ const findStudentByIdOrCustomId = async (idParam) => {
 };
 
 // GET /api/students - List all students with search & filter support
+// Helper to safely escape special characters in user search input
+const escapeRegex = (string) => {
+  return string.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+};
+
+// GET /api/students - List all students with search & filter support
 router.get('/', async (req, res) => {
   try {
     const { search, course, semester, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
@@ -19,7 +25,8 @@ router.get('/', async (req, res) => {
 
     // Live search query matching across studentId, name, email, and course
     if (search && search.trim() !== '') {
-      const regex = new RegExp(search.trim(), 'i');
+      const safePattern = escapeRegex(search.trim());
+      const regex = new RegExp(safePattern, 'i');
       query.$or = [
         { studentId: regex },
         { name: regex },
