@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="studentApp">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduNexus — Student Record Management System</title>
+  <meta name="description" content="Modern, reactive Student Record Management System built with AngularJS, Node.js, Express, and MongoDB.">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+</head>
+<body ng-controller="StudentController">
+
+  <div class="app-container">
+    <!-- Navbar Header -->
+    <header class="navbar">
+      <div class="brand-wrapper">
+        <div class="brand-logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">EduNexus</h1>
+          <span class="brand-subtitle">Student Record Management System</span>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- List All Students Button (resets search and shows all records) -->
+        <button id="btn-list-all" class="btn-list-students" ng-click="resetAndListAll()" title="View and list all enrolled students">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <span>List All Students</span>
+          <span class="student-count-pill">{{ students.length }}</span>
+        </button>
+
+        <button id="btn-seed-data" class="btn btn-secondary" ng-click="seedDemoData()" title="Load sample student records for quick demonstration and testing">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          Load Sample Data
+        </button>
+
+        <button id="btn-add-student-nav" class="btn btn-primary" ng-click="openAddModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Add Student
+        </button>
+      </div>
+    </header>
+
+    <!-- Dashboard Statistics Metrics -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Total Students</div>
+          <div class="stat-value" id="stat-total-students">{{ students.length }}</div>
+        </div>
+        <div class="stat-icon indigo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Academic Courses</div>
+          <div class="stat-value" id="stat-total-courses">{{ stats.totalCourses || 4 }}</div>
+        </div>
+        <div class="stat-icon cyan">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Semesters Covered</div>
+          <div class="stat-value">Sem 1 - 8</div>
+        </div>
+        <div class="stat-icon emerald">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-info">
+          <div class="stat-label">Record Verification</div>
+          <div class="stat-value">100%</div>
+        </div>
+        <div class="stat-icon amber">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Search & Filter Controls -->
+    <section class="control-panel">
+      <div class="search-box-wrapper">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input 
+          type="text" 
+          id="search-student-input"
+          class="search-input" 
+          placeholder="Search by student name, ID, email, or course..." 
+          ng-model="searchQuery" 
+          ng-change="onSearchChange()">
+        <button 
+          id="btn-clear-search"
+          class="search-clear-btn" 
+          ng-show="searchQuery.length > 0" 
+          ng-click="clearSearch()" 
+          title="Clear search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="filters-group">
+        <!-- Filter by Course -->
+        <select 
+          id="filter-course" 
+          class="select-filter" 
+          ng-model="selectedCourse" 
+          ng-change="fetchStudents()">
+          <option value="All">All Courses</option>
+          <option ng-repeat="c in coursesList" value="{{c}}">{{c}}</option>
+        </select>
+
+        <!-- Filter by Semester -->
+        <select 
+          id="filter-semester" 
+          class="select-filter" 
+          ng-model="selectedSemester" 
+          ng-change="fetchStudents()">
+          <option value="All">All Semesters</option>
+          <option ng-repeat="s in semestersList" value="{{s}}">Semester {{s}}</option>
+        </select>
+
+        <!-- View Mode Toggle -->
+        <div class="view-toggle-group">
+          <button 
+            id="toggle-table-view"
+            class="view-toggle-btn" 
+            ng-class="{'active': viewMode === 'table'}" 
+            ng-click="viewMode = 'table'"
+            title="Table View">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            Table
+          </button>
+          <button 
+            id="toggle-grid-view"
+            class="view-toggle-btn" 
+            ng-class="{'active': viewMode === 'grid'}" 
+            ng-click="viewMode = 'grid'"
+            title="Cards View">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            Cards
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content Area: Table View -->
+    <div class="table-container" ng-if="viewMode === 'table' && students.length > 0">
+      <table class="data-table" id="students-table">
+        <thead>
+          <tr>
+            <th ng-click="sortBy('studentId')">
+              <div class="th-sort-wrapper">
+                Student ID
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path>
+                </svg>
+              </div>
+            </th>
+            <th ng-click="sortBy('name')">
+              <div class="th-sort-wrapper">
+                Student Name
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path>
+                </svg>
+              </div>
+            </th>
+            <th ng-click="sortBy('course')">
+              <div class="th-sort-wrapper">
+                Course & Semester
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path>
+                </svg>
+              </div>
+            </th>
+            <th>Mobile Number</th>
+            <th style="text-align: right; padding-right: 1.5rem;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr ng-repeat="student in students | orderBy:sortField:sortReverse" class="student-row" id="student-row-{{student.studentId}}">
+            <td>
+              <span class="badge-id" ng-click="copyStudentId(student.studentId, $event)" title="Click to copy ID">
+                {{ student.studentId }}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </span>
+            </td>
+            <td>
+              <div class="student-name-col">
+                <div class="avatar-circle" ng-style="{'background': (student.name | avatarGradient)}">
+                  {{ student.name | initials }}
+                </div>
+                <div class="student-identity">
+                  <span class="student-fullname">{{ student.name }}</span>
+                  <a href="mailto:{{ student.email }}" class="student-email">{{ student.email }}</a>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span class="badge-course">{{ student.course }}</span>
+                <span class="badge-sem">Sem {{ student.semester }}</span>
+              </div>
+            </td>
+            <td>
+              <span style="color: var(--text-muted); font-size: 0.88rem;">
+                {{ student.mobile | formatMobile }}
+              </span>
+            </td>
+            <td>
+              <div class="table-actions" style="justify-content: flex-end;">
+                <!-- View ID Card -->
+                <button 
+                  class="action-btn btn-view" 
+                  id="btn-view-{{student.studentId}}" 
+                  ng-click="openViewModal(student)" 
+                  title="View Student ID Badge">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+                <!-- Edit Student -->
+                <button 
+                  class="action-btn btn-edit" 
+                  id="btn-edit-{{student.studentId}}" 
+                  ng-click="openEditModal(student)" 
+                  title="Edit Student Record">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                  </svg>
+                </button>
+                <!-- Delete Student -->
+                <button 
+                  class="action-btn btn-del" 
+                  id="btn-delete-{{student.studentId}}" 
+                  ng-click="openDeleteModal(student)" 
+                  title="Delete Student Record">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Main Content Area: Cards Grid View -->
+    <div class="grid-container" ng-if="viewMode === 'grid' && students.length > 0">
+      <div class="student-card" ng-repeat="student in students | orderBy:sortField:sortReverse" id="student-card-{{student.studentId}}">
+        <div>
+          <div class="student-card-top">
+            <div class="student-card-profile">
+              <div class="avatar-circle" ng-style="{'background': (student.name | avatarGradient)}" style="width: 44px; height: 44px; font-size: 1rem;">
+                {{ student.name | initials }}
+              </div>
+              <div>
+                <div style="font-weight: 600; font-size: 1.05rem;">{{ student.name }}</div>
+                <span class="badge-id" style="font-size: 0.75rem; margin-top: 2px;">{{ student.studentId }}</span>
+              </div>
+            </div>
+            <span class="badge-sem">Sem {{ student.semester }}</span>
+          </div>
+
+          <div class="student-card-details">
+            <div class="detail-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+              <span>{{ student.course }}</span>
+            </div>
+            <div class="detail-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <a href="mailto:{{ student.email }}" style="color: inherit; text-decoration: none;">{{ student.email }}</a>
+            </div>
+            <div class="detail-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+              <span>{{ student.mobile | formatMobile }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="student-card-footer">
+          <span style="font-size: 0.78rem; color: var(--text-dim);">Registered</span>
+          <div class="table-actions">
+            <button class="action-btn btn-view" ng-click="openViewModal(student)" title="View Badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+            <button class="action-btn btn-edit" ng-click="openEditModal(student)" title="Edit">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+              </svg>
+            </button>
+            <button class="action-btn btn-del" ng-click="openDeleteModal(student)" title="Delete">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" ng-if="students.length === 0 && !isLoading">
+      <div class="empty-state-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          <line x1="8" y1="11" x2="14" y2="11"></line>
+        </svg>
+      </div>
+      <h3 class="empty-state-title">No Student Records Found</h3>
+      <p class="empty-state-desc" ng-if="searchQuery">
+        No students matched your search criteria "<strong style="color: var(--text-main);">{{searchQuery}}</strong>". Try adjusting your search query or filters.
+      </p>
+      <p class="empty-state-desc" ng-if="!searchQuery">
+        The student database is currently empty. Get started by adding your first student record or seeding sample records!
+      </p>
+      <div style="display: flex; gap: 0.85rem; margin-top: 0.5rem;">
+        <button class="btn btn-secondary" ng-if="searchQuery" ng-click="clearSearch()">Clear Filters</button>
+        <button class="btn btn-primary" ng-click="openAddModal()">Add New Student</button>
+        <button class="btn btn-secondary" ng-click="seedDemoData()">Load Sample Records</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Add / Edit Student -->
+  <div class="modal-overlay" ng-if="modalState.showForm" ng-click="closeFormModal()">
+    <div class="modal-dialog" ng-click="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-wrapper">
+          <div class="modal-title-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="8.5" cy="7" r="4"></circle>
+              <line x1="20" y1="8" x2="20" y2="14"></line>
+              <line x1="23" y1="11" x2="17" y2="11"></line>
+            </svg>
+          </div>
+          <h2 class="modal-title" id="form-modal-title">
+            {{ modalState.isEdit ? 'Update Student Record' : 'Register New Student' }}
+          </h2>
+        </div>
+        <button class="modal-close-btn" ng-click="closeFormModal()" title="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <form name="studentForm" ng-submit="saveStudent()" novalidate>
+        <div class="modal-body">
+          <div class="form-grid">
+            <!-- Student ID -->
+            <div class="form-group">
+              <label class="form-label" for="input-student-id">
+                Student ID <span class="required-star">*</span>
+              </label>
+              <input 
+                type="text" 
+                id="input-student-id" 
+                name="studentId" 
+                class="form-control" 
+                ng-class="{'is-invalid': studentForm.studentId.$touched && studentForm.studentId.$invalid}"
+                placeholder="e.g. STU-1001" 
+                ng-model="formData.studentId" 
+                ng-pattern="/^[A-Za-z0-9\-_]+$/"
+                required>
+              <span class="form-error-msg" ng-show="studentForm.studentId.$touched && studentForm.studentId.$error.required">
+                Student ID is required.
+              </span>
+              <span class="form-error-msg" ng-show="studentForm.studentId.$touched && studentForm.studentId.$error.pattern">
+                Alphanumeric, hyphens and underscores only.
+              </span>
+            </div>
+
+            <!-- Student Name -->
+            <div class="form-group">
+              <label class="form-label" for="input-student-name">
+                Student Name <span class="required-star">*</span>
+              </label>
+              <input 
+                type="text" 
+                id="input-student-name" 
+                name="name" 
+                class="form-control" 
+                ng-class="{'is-invalid': studentForm.name.$touched && studentForm.name.$invalid}"
+                placeholder="e.g. Aarav Sharma" 
+                ng-model="formData.name" 
+                minlength="2"
+                required>
+              <span class="form-error-msg" ng-show="studentForm.name.$touched && studentForm.name.$error.required">
+                Name is required.
+              </span>
+            </div>
+
+            <!-- Email Address -->
+            <div class="form-group col-full">
+              <label class="form-label" for="input-student-email">
+                Email Address <span class="required-star">*</span>
+              </label>
+              <input 
+                type="email" 
+                id="input-student-email" 
+                name="email" 
+                class="form-control" 
+                ng-class="{'is-invalid': studentForm.email.$touched && studentForm.email.$invalid}"
+                placeholder="e.g. aarav.sharma@example.com" 
+                ng-model="formData.email" 
+                required>
+              <span class="form-error-msg" ng-show="studentForm.email.$touched && (studentForm.email.$error.required || studentForm.email.$error.email)">
+                Please enter a valid email address.
+              </span>
+            </div>
+
+            <!-- Course -->
+            <div class="form-group">
+              <label class="form-label" for="input-student-course">
+                Course Program <span class="required-star">*</span>
+              </label>
+              <select 
+                id="input-student-course" 
+                name="course" 
+                class="form-control" 
+                ng-model="formData.course" 
+                required>
+                <option ng-repeat="c in coursesList" value="{{c}}">{{c}}</option>
+              </select>
+            </div>
+
+            <!-- Semester -->
+            <div class="form-group">
+              <label class="form-label" for="input-student-semester">
+                Semester (1-8) <span class="required-star">*</span>
+              </label>
+              <select 
+                id="input-student-semester" 
+                name="semester" 
+                class="form-control" 
+                ng-model="formData.semester" 
+                required>
+                <option ng-repeat="s in semestersList" value="{{s}}">Semester {{s}}</option>
+              </select>
+            </div>
+
+            <!-- Mobile Number -->
+            <div class="form-group col-full">
+              <label class="form-label" for="input-student-mobile">
+                Mobile Number (10 Digits) <span class="required-star">*</span>
+              </label>
+              <input 
+                type="tel" 
+                id="input-student-mobile" 
+                name="mobile" 
+                class="form-control" 
+                ng-class="{'is-invalid': studentForm.mobile.$touched && studentForm.mobile.$invalid}"
+                placeholder="e.g. 9876543210" 
+                ng-model="formData.mobile" 
+                ng-pattern="/^[0-9]{10}$/"
+                required>
+              <span class="form-error-msg" ng-show="studentForm.mobile.$touched && studentForm.mobile.$error.required">
+                Mobile number is required.
+              </span>
+              <span class="form-error-msg" ng-show="studentForm.mobile.$touched && studentForm.mobile.$error.pattern">
+                Please enter a valid 10-digit mobile number.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" ng-click="closeFormModal()">Cancel</button>
+          <button type="submit" id="btn-submit-student" class="btn btn-primary" ng-disabled="studentForm.$invalid">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            {{ modalState.isEdit ? 'Save Changes' : 'Create Record' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Digital Student ID Badge View -->
+  <div class="modal-overlay" ng-if="modalState.showView" ng-click="closeViewModal()">
+    <div class="modal-dialog" style="max-width: 460px;" ng-click="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-wrapper">
+          <h2 class="modal-title">Student Identity Pass</h2>
+        </div>
+        <button class="modal-close-btn" ng-click="closeViewModal()" title="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="id-card-container">
+          <div class="id-card-chip"></div>
+          <div class="id-card-header">
+            <div class="id-card-avatar" ng-style="{'background': (currentViewStudent.name | avatarGradient)}">
+              {{ currentViewStudent.name | initials }}
+            </div>
+            <div class="id-card-meta">
+              <h3>{{ currentViewStudent.name }}</h3>
+              <span class="badge-id" style="font-size: 0.85rem;">{{ currentViewStudent.studentId }}</span>
+            </div>
+          </div>
+
+          <div class="id-card-grid">
+            <div>
+              <div class="id-field-label">Course</div>
+              <div class="id-field-val" style="font-size: 0.85rem;">{{ currentViewStudent.course }}</div>
+            </div>
+            <div>
+              <div class="id-field-label">Semester</div>
+              <div class="id-field-val">Semester {{ currentViewStudent.semester }}</div>
+            </div>
+            <div style="grid-column: span 2;">
+              <div class="id-field-label">Email</div>
+              <div class="id-field-val" style="font-size: 0.85rem;">{{ currentViewStudent.email }}</div>
+            </div>
+            <div style="grid-column: span 2;">
+              <div class="id-field-label">Mobile</div>
+              <div class="id-field-val">{{ currentViewStudent.mobile | formatMobile }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" ng-click="closeViewModal()">Close</button>
+        <button class="btn btn-primary" ng-click="closeViewModal(); openEditModal(currentViewStudent)">
+          Edit Record
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Delete Confirmation -->
+  <div class="modal-overlay" ng-if="modalState.showDelete" ng-click="closeDeleteModal()">
+    <div class="modal-dialog" style="max-width: 440px;" ng-click="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-wrapper">
+          <div class="modal-title-icon" style="background: var(--danger-glow); color: var(--danger);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </div>
+          <h2 class="modal-title" style="color: var(--danger);">Delete Student Record</h2>
+        </div>
+        <button class="modal-close-btn" ng-click="closeDeleteModal()" title="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p style="color: var(--text-main); margin-bottom: 0.75rem; font-size: 0.95rem;">
+          Are you sure you want to permanently delete the student record for:
+        </p>
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 0.5rem;">
+          <div style="font-weight: 700; font-size: 1.05rem; color: white;">{{ studentToDelete.name }}</div>
+          <div style="color: var(--primary-light); font-size: 0.85rem; font-family: monospace;">ID: {{ studentToDelete.studentId }}</div>
+          <div style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.25rem;">{{ studentToDelete.course }}</div>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--danger);">
+          This action cannot be undone. All data associated with this student will be erased.
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" ng-click="closeDeleteModal()">Cancel</button>
+        <button id="btn-confirm-delete" class="btn btn-danger" ng-click="confirmDelete()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          Delete Record
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications Container -->
+  <div class="toast-container">
+    <div 
+      ng-repeat="toast in toasts" 
+      class="toast" 
+      ng-class="{'toast-success': toast.type === 'success', 'toast-error': toast.type === 'error', 'toast-info': toast.type === 'info'}">
+      <div class="toast-message">{{ toast.message }}</div>
+      <button 
+        style="background: transparent; border: none; color: var(--text-dim); cursor: pointer; padding: 2px;" 
+        ng-click="removeToast(toast.id)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- AngularJS Scripts (Local with fallback) -->
+  <script src="js/lib/angular.min.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/controllers/studentController.js"></script>
+</body>
+</html>
